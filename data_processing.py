@@ -2,9 +2,10 @@ import pandas as pd
 from typing import Dict, List
 
 
-class DataProcess:
+class DataProcessAggregateDaily:
     """
     Data Processing for Hierarchical Pandas Data Frame
+    Used for EDA on daily data
     """
 
     def __init__(self,
@@ -58,13 +59,13 @@ class DataProcess:
             df = self.data[home_i]
 
             # cast dtypes
-            df = DataProcess.change_dtype(df, self.col_names, self.col_dtype)
+            df = DataProcessAggregateDaily.change_dtype(df, self.col_names, self.col_dtype)
 
             # drop duplicates
-            df = DataProcess.drop_duplicates(df)
+            df = DataProcessAggregateDaily.drop_duplicates(df)
 
             # create aggregate index, later on this will be used as index for grouping
-            df["agg_index"] = DataProcess.create_window_index_for_agg_over(df.index, self.cycle_val)
+            df["agg_index"] = DataProcessAggregateDaily.create_window_index_for_agg_over(df.index, self.cycle_val)
 
             # drop data which does not account for 24h cycle
             not_full_cycle_index = df["agg_index"].value_counts()[df["agg_index"].value_counts() != 24].index
@@ -102,8 +103,4 @@ class DataProcess:
         return e_consumption_per_home
 
 
-def combine_data(dict_of_df: Dict) -> pd.DataFrame:
-    df = pd.DataFrame()
-    for _, data in dict_of_df.items():
-        df = pd.concat([df, data])
-    return df.sort_index()
+

@@ -4,6 +4,8 @@ from statsmodels.tsa.stattools import adfuller, q_stat
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+from typing import Dict
 
 def plot_correlogram(x, lags=None, title=None):
     lags = min(10, int(len(x)/5)) if lags is None else lags
@@ -25,3 +27,20 @@ def plot_correlogram(x, lags=None, title=None):
     sns.despine()
     fig.tight_layout()
     fig.subplots_adjust(top=.9)
+
+
+def combine_data(dict_of_df: Dict) -> pd.DataFrame:
+    df = pd.DataFrame()
+    for _, data in dict_of_df.items():
+        df = pd.concat([df, data])
+    return df.sort_index()
+
+
+def unpack_hierarchical_data_frame(df: Dict) -> pd.DataFrame:
+    indexes = df.columns.get_level_values(0).unique()
+    df_unpack = pd.DataFrame()
+    for i in indexes:
+        temp_df = df[i].copy(deep=True)
+        temp_df["home_num"] = i
+        df_unpack = pd.concat([df_unpack, temp_df])
+    return df_unpack
