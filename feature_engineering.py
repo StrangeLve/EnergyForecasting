@@ -55,12 +55,48 @@ class CalcShift(BaseEstimator, TransformerMixin):
 
 
 class ExtractDayTime(BaseEstimator, TransformerMixin):
+    # constructed by visual inspection of boxplot
+    # consumption during day time
+    mapper = {
+        0 : "Night",
+        1 : "Night",
+        2 : "Night",
+        3 : "Night",
+        4 : "Night",
+        5 : "Morning",
+        6 : "Morning",
+        7 : "Morning",
+        8 : "Morning",
+        9 : "Day Time",
+        10 : "Day Time",
+        11 : "Day Time",
+        12 : "Day Time",
+        13 : "Day Time",
+        14 : "Day Time",
+        15 : "Day Time Peak Hour",
+        16 : "Day Time Peak Hour",
+        17 : "Day Time Peak Hour",
+        18 : "Day Time Peak Hour",
+        19 : "Day Time Peak Hour",
+        20 : "Day Time Peak Hour",
+        21 : "Evening",
+        22 : "Evening",
+        23 : "Evening"
+    }
+    def fit(self, x=None, y=None):
+        return self
+
+    def transform(self, x):
+        return x.apply(lambda val: ExtractDayTime.mapper[val.hour]).to_frame("day_time")
+
+
+class ExtractWeekDay(BaseEstimator, TransformerMixin):
 
     def fit(self, x=None, y=None):
         return self
 
     def transform(self, x):
-        return x.apply(lambda val: val.hour).to_frame("day_time")
+        return x.apply(lambda val: val.weekday()).to_frame("week_day")
 
 
 class ExtractSeason(BaseEstimator, TransformerMixin):
@@ -83,20 +119,6 @@ class ExtractSeason(BaseEstimator, TransformerMixin):
             11: 'Autumn',
             12: 'Winter'
         }
-        # seasons = {
-        #     1: 0,
-        #     2: 0,
-        #     3: 1,
-        #     4: 1,
-        #     5: 1,
-        #     6: 2,
-        #     7: 2,
-        #     8: 2,
-        #     9: 3,
-        #     10: 3,
-        #     11: 3,
-        #     12: 0
-        # }
         return x.apply(lambda val: seasons[val.month]).to_frame("season")
 
 
@@ -108,7 +130,7 @@ class OneHot(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, x):
-        return pd.get_dummies(x, drop_first=self.drop_first)
+        return pd.get_dummies(x.astype(str), drop_first=self.drop_first)
 
 
 class PandasFeatureUnion(FeatureUnion):
@@ -136,6 +158,7 @@ class PandasFeatureUnion(FeatureUnion):
 
     def merge_dataframes_by_column(self, Xs):
         return pd.concat(Xs, axis="columns", copy=False)
+
 
     def transform(self, X):
         Xs = Parallel(n_jobs=self.n_jobs)(

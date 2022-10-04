@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from typing import Dict
+from sklearn.metrics import mean_squared_error
 
 def plot_correlogram(x, lags=None, title=None):
     lags = min(10, int(len(x)/5)) if lags is None else lags
@@ -44,3 +45,25 @@ def unpack_hierarchical_data_frame(df: pd.DataFrame) -> pd.DataFrame:
         temp_df["home_num"] = i
         df_unpack = pd.concat([df_unpack, temp_df])
     return df_unpack
+
+
+def nmae(pred, act):
+    return np.sum(np.abs(pred - act)) / np.sum(act)
+
+def mape(pred, act):
+    return np.mean(np.abs(pred-act)/act)
+
+def nmae_scorer(estimator, X, y):
+    pred = estimator.predict(X)
+    return nmae(pred, y)
+
+def mape_scorer(estimator, X, y):
+    pred = estimator.predict(X)
+    return mape(pred, y)
+
+def mean_squared_error_scorer(estimator, X, y):
+    pred = estimator.predict(X)
+    return mean_squared_error(pred, y)
+
+
+
