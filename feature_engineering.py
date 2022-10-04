@@ -83,7 +83,32 @@ class ExtractSeason(BaseEstimator, TransformerMixin):
             11: 'Autumn',
             12: 'Winter'
         }
+        # seasons = {
+        #     1: 0,
+        #     2: 0,
+        #     3: 1,
+        #     4: 1,
+        #     5: 1,
+        #     6: 2,
+        #     7: 2,
+        #     8: 2,
+        #     9: 3,
+        #     10: 3,
+        #     11: 3,
+        #     12: 0
+        # }
         return x.apply(lambda val: seasons[val.month]).to_frame("season")
+
+
+class OneHot(BaseEstimator, TransformerMixin):
+    def __init__(self, drop_first=False):
+        self.drop_first = drop_first
+
+    def fit(self, x=None, y=None):
+        return self
+
+    def transform(self, x):
+        return pd.get_dummies(x, drop_first=self.drop_first)
 
 
 class PandasFeatureUnion(FeatureUnion):

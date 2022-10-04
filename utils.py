@@ -36,7 +36,7 @@ def combine_data(dict_of_df: Dict) -> pd.DataFrame:
     return df.sort_index()
 
 
-def unpack_hierarchical_data_frame(df: Dict) -> pd.DataFrame:
+def unpack_hierarchical_data_frame(df: pd.DataFrame) -> pd.DataFrame:
     indexes = df.columns.get_level_values(0).unique()
     df_unpack = pd.DataFrame()
     for i in indexes:
