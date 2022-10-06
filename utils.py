@@ -8,6 +8,7 @@ import pandas as pd
 from typing import Dict
 from sklearn.metrics import mean_squared_error
 from scipy.stats import spearmanr
+from sklearn.metrics import make_scorer
 
 def plot_correlogram(x, lags=None, title=None):
     lags = min(10, int(len(x)/5)) if lags is None else lags
@@ -48,7 +49,9 @@ def unpack_hierarchical_data_frame(df: pd.DataFrame) -> pd.DataFrame:
     return df_unpack
 
 
-def nmae(pred, act):
+def nmae(act, pred):
+    # print(f"denominator: {np.sum(act)}")
+    # print(f"numerator: {np.sum(np.abs(pred - act))}")
     return np.sum(np.abs(pred - act)) / np.sum(act)
 
 def mape(pred, act):
@@ -56,7 +59,7 @@ def mape(pred, act):
 
 def nmae_scorer(estimator, X, y):
     pred = estimator.predict(X)
-    return nmae(pred, y)
+    return nmae(y, pred)
 
 def mape_scorer(estimator, X, y):
     pred = estimator.predict(X)
