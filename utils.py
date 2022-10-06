@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 from typing import Dict
 from sklearn.metrics import mean_squared_error
+from scipy.stats import spearmanr
 
 def plot_correlogram(x, lags=None, title=None):
     lags = min(10, int(len(x)/5)) if lags is None else lags
@@ -65,5 +66,11 @@ def mean_squared_error_scorer(estimator, X, y):
     pred = estimator.predict(X)
     return mean_squared_error(pred, y)
 
+def corr_metric(pred, act):
+    return spearmanr(pred, act)[0]
+
+def corr_metric_scorer(estimator, X, y):
+    pred = estimator.predict(X)
+    return spearmanr(y, pred)[0]
 
 

@@ -36,6 +36,26 @@ class CastType(BaseEstimator, TransformerMixin):
         return X.astype(self.to_dtype)
 
 
+class ApplyLogTransformation(BaseEstimator, TransformerMixin):
+
+    def fit(self, x, y=None):
+        return self
+
+    def transform(self, X):
+        return np.log(X + 0.01)
+
+class ApplyRollingWindowMean(BaseEstimator, TransformerMixin):
+    def __init__(self, widnow: int):
+        self.widnow = widnow
+
+    def fit(self, x, y=None):
+        return self
+
+    def transform(self, X):
+        return X.rolling(self.widnow).mean().to_frame(f"rolling_mean_{self.widnow}_{X.name}")
+
+
+
 class CalcShift(BaseEstimator, TransformerMixin):
     def __init__(self, shift_val, new_feat_name=None):
         self.shift_val = shift_val
