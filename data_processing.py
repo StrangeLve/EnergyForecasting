@@ -51,7 +51,7 @@ class DataProcessAggregateDaily:
     def drop_duplicates(data: pd.DataFrame, keep="last") -> pd.DataFrame:
         return data.reset_index().drop_duplicates(subset='time', keep=keep).set_index("time")
 
-    def main(self) -> Dict:
+    def main(self, generate_feature=True) -> Dict:
         e_consumption_per_home = {}
         homes_indexes = self.data.columns.get_level_values(0).unique()
         for home_i in homes_indexes:
@@ -70,36 +70,48 @@ class DataProcessAggregateDaily:
             # drop data which does not account for 24h cycle
             not_full_cycle_index = df["agg_index"].value_counts()[df["agg_index"].value_counts() != 24].index
             df = df.drop(df["agg_index"][not_full_cycle_index])
+            if generate_feature:
+                # create aggregate features and target
+                consumption = pd.DataFrame({"consumption_(t+1)": df.groupby("agg_index")["consumption"].sum().shift(-2),
+                                            "consumption_(t-1)": df.groupby("agg_index")["consumption"].sum()})
 
-            # create aggregate features and target
-            consumption = pd.DataFrame({"consumption_(t+1)": df.groupby("agg_index")["consumption"].sum().shift(-2),
-                                        "consumption_(t-1)": df.groupby("agg_index")["consumption"].sum()})
+                temperature = pd.DataFrame({"avg_temperature": df.groupby("agg_index")["temperature"].mean(),
+                                            "min_temperature": df.groupby("agg_index")["temperature"].min(),
+                                            "max_temperature": df.groupby("agg_index")["temperature"].max(),
+                                            "spread_temperature": df.groupby("agg_index")["temperature"].max()-df.groupby("agg_index")["temperature"].min()}).shift(1)
 
-            temperature = pd.DataFrame({"avg_temperature": df.groupby("agg_index")["temperature"].mean(),
-                                        "min_temperature": df.groupby("agg_index")["temperature"].min(),
-                                        "max_temperature": df.groupby("agg_index")["temperature"].max(),
-                                        "spread_temperature": df.groupby("agg_index")["temperature"].max()-df.groupby("agg_index")["temperature"].min()}).shift(1)
+                humidity = pd.DataFrame({"avg_humidity": df.groupby("agg_index")["humidity"].mean(),
+                                         "min_humidity": df.groupby("agg_index")["humidity"].min(),
+                                         "max_humidity": df.groupby("agg_index")["humidity"].max(),
+                                         "spread_humidity": df.groupby("agg_index")["humidity"].max()-df.groupby("agg_index")["temperature"].min()}).shift(1)
 
-            humidity = pd.DataFrame({"avg_humidity": df.groupby("agg_index")["humidity"].mean(),
-                                     "min_humidity": df.groupby("agg_index")["humidity"].min(),
-                                     "max_humidity": df.groupby("agg_index")["humidity"].max(),
-                                     "spread_humidity": df.groupby("agg_index")["humidity"].max()-df.groupby("agg_index")["temperature"].min()}).shift(1)
+                cloudiness = pd.DataFrame({"avg_cloudiness": df.groupby("agg_index")["cloudiness"].mean(),
+                                           "min_cloudiness": df.groupby("agg_index")["cloudiness"].min(),
+                                           "max_cloudiness": df.groupby("agg_index")["cloudiness"].max(),
+                                           "spread_cloudiness": df.groupby("agg_index")["cloudiness"].max()-df.groupby("agg_index")["temperature"].min()}).shift(1)
 
-            cloudiness = pd.DataFrame({"avg_cloudiness": df.groupby("agg_index")["cloudiness"].mean(),
-                                       "min_cloudiness": df.groupby("agg_index")["cloudiness"].min(),
-                                       "max_cloudiness": df.groupby("agg_index")["cloudiness"].max(),
-                                       "spread_cloudiness": df.groupby("agg_index")["cloudiness"].max()-df.groupby("agg_index")["temperature"].min()}).shift(1)
+                data_preprocessed = pd.concat([consumption, temperature, humidity, cloudiness],
+                                              axis=1).dropna()
 
-            data_preprocessed = pd.concat([consumption, temperature, humidity, cloudiness],
-                                          axis=1).dropna()
+                data_preprocessed["ev"] = 1 if self.meta[home_i]['has_electric_vehicle'] else 0
 
-            data_preprocessed["ev"] = 1 if self.meta[home_i]['has_electric_vehicle'] else 0
+                # NOTE: home_num won't be used as feature for modelling
+                data_preprocessed["home_num"] = home_i
 
-            # NOTE: home_num won't be used as feature for modelling
-            data_preprocessed["home_num"] = home_i
+                e_consumption_per_home[home_i] = data_preprocessed
+            else:
+                consumption = pd.DataFrame({"consumption": df.groupby("agg_index")["consumption"].sum(),
+                                            })
 
-            e_consumption_per_home[home_i] = data_preprocessed
+                temperature = pd.DataFrame({"avg_temperature": df.groupby("agg_index")["temperature"].mean()})
 
+                humidity = pd.DataFrame({"avg_humidity": df.groupby("agg_index")["humidity"].mean()})
+
+                cloudiness = pd.DataFrame({"avg_cloudiness": df.groupby("agg_index")["cloudiness"].mean()})
+
+                data_preprocessed = pd.concat([consumption, temperature, humidity, cloudiness],
+                                              axis=1).dropna()
+                e_consumption_per_home[home_i] = data_preprocessed
         return e_consumption_per_home
 
 
